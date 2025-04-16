@@ -13,7 +13,7 @@ def connexion():
         mdp_select = input("Entrez votre mot de passe : ")
         if id_select == id and mdp_select == mdp:
             print("Connexion réussie !")
-            print(f"Bonjour, {id} !")
+            menu()
         else:
             print("Identifiant ou mot de passe incorrect.")
     elif selection == "2":
@@ -21,8 +21,39 @@ def connexion():
         mdp_select = input("Entrez le mot de passe que vous souhaitez utiliser : ")
         
         print("Connexion réussie !")
-        print(f"Bonjour, {id} !")
+        menu()
+        
     
+def menu():
+    print(f"Bonjour, {id} !")
+    print("Menu principal :")
+    print("1. Consulter les messages")
+    print("2. Envoyer un message ")
+    print("3. Les membres connectés")
+    
+    selected = input ("Sélectionnez une option : ")
+    
+    if selected == "1":
+        consulter_messages()
+    elif selected == "2":
+        envoyer_message()
+    elif selected == "3":
+        pers_connectés()
+    
+def consulter_messages():
+    print("Voici vos messages :")
+    # Afficher les messages ici
+    pass
+
+def envoyer_message():
+    print("Envoyer un message :")
+    # Logique pour envoyer un message ici
+    pass
+
+def pers_connectés():
+    print("Voici les membres connectés :")
+    # Afficher les membres connectés ici
+    pass
 
 if __name__ == "__main__":
     connexion()
