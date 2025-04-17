@@ -68,8 +68,7 @@ def consulter_messages(messages : Messages):
     print(recus)
     
     for message in recus : 
-        print(message)
-        print(f"De : {message['sender']}, Message : {message['text']}, Date : {message['timestamp']}")
+        print(f"Sender {message['sender']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
     
 
 def envoyer_message(messages : Messages):
