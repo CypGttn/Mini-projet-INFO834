@@ -59,12 +59,6 @@ def get_top_3_users():
 def get_last_10_logins():
     return r.lrange("last_logins", 0, 9)
 
-def get_least_used_users():
-    return r_services.zrange("user_services", 0, -1, withscores=True)
-
-def get_most_used_service():
-    return r_services.zrevrange("services", 0, 0, withscores=True)
-
 if __name__ == "__main__":
 
     username = sys.argv[1]
