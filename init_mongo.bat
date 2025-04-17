@@ -7,7 +7,7 @@ echo ----------------------------
 start mongod --dbpath C:\data\db
 
 :: Pause pour s'assurer que mongod est bien lancé
-timeout /t 5 >nul
+timeout /t 10 >nul
 
 :: Exécution du script init.js
 echo Exécution du script d'initialisation...

@@ -1,17 +1,25 @@
 import argparse
+from pymongo import MongoClient
+
+#Se connecter à la base de données MongoDB
+client = MongoClient('mongodb://localhost:27017/')
+#COnnexion bdd
+db = client['lesBellesMiches']
 
 def connexion():
     print("Bienvenue dans Les Belles Miches ! Le chat qui fait gonfler ton temps d'écran. ")
     
     selection = input("Si vous souhaitez vous connectez, tapez 1. Si vous souhaitez créez un compte, tapez 2.")
     
-    id = "angele"
-    mdp = "brol"
+    # Connexion avec la table 
+    collection = db['user']
     
     if selection == "1":
         id_select = input("Entrez votre identifiant : ")
         mdp_select = input("Entrez votre mot de passe : ")
-        if id_select == id and mdp_select == mdp:
+        
+        user = collection.find_one({"username": id_select})
+        if id_select == user["username"] and mdp_select == user["password"]:
             print("Connexion réussie !")
             menu()
         else:
