@@ -10,10 +10,9 @@ db.user.insertMany([
 ]);
 
 db.message.insertOne({
-    id: "0",
     sender: "alice",
     recipient: "bob",
     text: "Hello Bob!",
     timestamp: new Date(),
-    read: "no"
+    read: false
 });
