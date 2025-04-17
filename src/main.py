@@ -1,6 +1,8 @@
 import argparse
 from pymongo import MongoClient
 
+from messages import Messages
+
 #Se connecter à la base de données MongoDB
 client = MongoClient('mongodb://localhost:27017/')
 #COnnexion bdd
@@ -22,7 +24,7 @@ def connexion():
         user = collection.find_one({"username": id_select})
         if id_select == user["username"] and mdp_select == user["password"]:
             print("Connexion réussie !")
-            menu()
+            menu(id_select)
         else:
             print("Identifiant ou mot de passe incorrect.")
             
@@ -30,6 +32,7 @@ def connexion():
         id_select = input("Entrez l'identifiant que vous souhaitez utiliser : ")
         mdp_select = input("Entrez le mot de passe que vous souhaitez utiliser : ")
         
+        # Vérification que l'identifiant rentrer n'esxiste pas
         user = collection.find_one({"username": id_select})
         if user : 
             print("Cet identifiant existe déjà.")
@@ -39,11 +42,10 @@ def connexion():
             collection.insert_one(conn)
             
             print("Connexion réussie !")
-            menu()
-        
-    
-def menu():
-    print(f"Bonjour, {id} !")
+            menu(id_select)
+
+def menu(user):
+    print(f"Bonjour, {user} !")
     print("Menu principal :")
     print("1. Consulter les messages")
     print("2. Envoyer un message ")
@@ -51,22 +53,29 @@ def menu():
     
     selected = input ("Sélectionnez une option : ")
     
+    messages = Messages(db, user)
+    
     if selected == "1":
-        consulter_messages()
+        consulter_messages(messages)
     elif selected == "2":
-        envoyer_message()
+        envoyer_message(messages)
     elif selected == "3":
         pers_connectés()
-    
-def consulter_messages():
-    print("Voici vos messages :")
-    # Afficher les messages ici
-    pass
 
-def envoyer_message():
+def consulter_messages(messages : Messages):
+    print("Voici vos messages que vous avez reçus :")
+    recus = messages.received_messages()
+    print(recus)
+    
+    for message in recus : 
+        print(f"Sender {message['sender']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
+    
+
+def envoyer_message(messages : Messages):
     print("Envoyer un message :")
-    # Logique pour envoyer un message ici
-    pass
+    recipient = input("Entrez le nom d'utilisateur du destinataire : ")
+    message = input("Entrez le message que vous sohuhaitez envoyer : ")
+    messages.send_message(recipient, message)
 
 def pers_connectés():
     print("Voici les membres connectés :")
