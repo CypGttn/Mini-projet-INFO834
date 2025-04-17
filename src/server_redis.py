@@ -2,6 +2,7 @@ import redis
 import sys
 import bcrypt
 from pymongo import MongoClient
+import datetime
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -39,6 +40,23 @@ except redis.AuthenticationError:
 except Exception as e:
     print(f"Erreur de connexion à Redis : {e}")
     sys.exit(1)
+    
+def log_event(username, event_type):
+    timestamp = datetime.datetime.now().isoformat()
+    event_data = {
+        "username": username,
+        "timestamp": timestamp,
+        "event": event_type
+    }
+
+    # Stockage dans une liste Redis (type list)
+    r.lpush("user_events", str(event_data))
+    
+def get_user_logs():
+    logs = r.lrange("user_events", 0, -1)
+    for log in logs:
+        print(log)
+
 
 # ───── Fonctions d'authentification ───── #
 def verify_user(username, password):
@@ -109,3 +127,10 @@ if __name__ == "__main__":
 
     log_login(username)
     print("Connexion réussie.")
+    
+    log_event(username, "connexion")
+    
+    if len(sys.argv) == 4 and sys.argv[3] == "logout":
+        log_event(username, "deconnexion")
+        print("Déconnexion enregistrée.")
+        sys.exit(0)
