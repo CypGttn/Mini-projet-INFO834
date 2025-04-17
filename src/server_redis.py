@@ -49,14 +49,6 @@ def log_login(username):
 
     r.zincrby("user_connections", 1, username)  # Incrémente les connexions de l'utilisateur
 
-def log_service_usage(username, service):
-    """Enregistre l'utilisation d'un service par un utilisateur dans Redis (DB 1)."""
-    service_key = f"services:{service}"
-    user_key = f"user_services:{username}"
-
-    r_services.incr(service_key)   # Incrémente le total d'utilisation du service
-    r_services.zincrby("user_services", 1, username)  # Incrémente l'utilisation par utilisateur
-
 def log_user_connection(username):
     """Incrémente le nombre de connexions d'un utilisateur"""
     r.zincrby("user_connections", 1, username)
@@ -74,6 +66,7 @@ def get_most_used_service():
     return r_services.zrevrange("services", 0, 0, withscores=True)
 
 if __name__ == "__main__":
+
     username = sys.argv[1]
     password = sys.argv[2]
 
