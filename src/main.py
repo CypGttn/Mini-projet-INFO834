@@ -18,18 +18,28 @@ def connexion():
         id_select = input("Entrez votre identifiant : ")
         mdp_select = input("Entrez votre mot de passe : ")
         
+        # On récupère les infos du user choisit avec id_select
         user = collection.find_one({"username": id_select})
         if id_select == user["username"] and mdp_select == user["password"]:
             print("Connexion réussie !")
             menu()
         else:
             print("Identifiant ou mot de passe incorrect.")
+            
     elif selection == "2":
         id_select = input("Entrez l'identifiant que vous souhaitez utiliser : ")
         mdp_select = input("Entrez le mot de passe que vous souhaitez utiliser : ")
         
-        print("Connexion réussie !")
-        menu()
+        user = collection.find_one({"username": id_select})
+        if user : 
+            print("Cet identifiant existe déjà.")
+            connexion()
+        else : 
+            conn = {"username": id_select, "password": mdp_select}
+            collection.insert_one(conn)
+            
+            print("Connexion réussie !")
+            menu()
         
     
 def menu():
