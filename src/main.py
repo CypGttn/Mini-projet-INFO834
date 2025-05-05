@@ -44,6 +44,7 @@ def menu(user):
     print("2. Envoyer un message ")
     print("3. Liste des messages que vous avez envoyés ")
     print("4. Les membres connectés")
+    print("5. Quitter")
     
     selected = input ("Sélectionnez une option : ")
     
@@ -57,6 +58,8 @@ def menu(user):
         messages_envoyés = messages_envoyes(messages)
     elif selected == "4":
         pers_connectés(user)
+    elif selected == "5":
+        deconnexion()
 
 def consulter_messages(messages : Messages):
     print("Voici vos messages que vous avez reçus :")
@@ -84,6 +87,11 @@ def pers_connectés(user):
     # Afficher les membres connectés ici
     menu(user)
     pass
+
+def deconnexion () : 
+    print("Vous avez été déconnecté !")
+    connexion()
+    
 
 if __name__ == "__main__":
     connexion()

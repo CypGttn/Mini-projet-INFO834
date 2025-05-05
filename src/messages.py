@@ -44,5 +44,5 @@ class Messages :
         #Récupérer le ou les messages que l'user a envoyé
         messages = self.collection.find({"sender": username})
         for message in messages:
-            print(f"Sender {message['sender']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
+            print(f"Receiver {message['recipient']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
         
