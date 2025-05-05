@@ -9,4 +9,4 @@ class Inscription :
             list_user.insert_one(conn)
             
             self.add = True
-            print(f"Bienvenu {username} !")
+            print(f"Bienvenue {username} !")
