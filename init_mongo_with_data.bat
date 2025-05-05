@@ -3,18 +3,12 @@ echo ----------------------------
 echo Initialisation de MongoDB...
 echo ----------------------------
 
-:: Démarrer mongod dans une nouvelle fenêtre, avec un vrai titre
-start /min "MongoDB Server" cmd /k mongod --dbpath "C:\data\db"
+:: Attendre un peu pour s'assurer que le PRIMARY est élu (si pas déjà fait)
+timeout /t 5 >nul
 
-:: Pause pour attendre que le serveur démarre
-timeout /t 20 >nul
-
-:: Exécuter le script d'initialisation
+:: Exécution du script d'initialisation sur le PRIMARY (port 27017)
 echo Exécution du script d'initialisation...
-mongosh < "init\init_with_data.js"
+mongosh --port 27017 < "init\init_with_data.js"
 
 echo ----------------------------
 echo Initialisation terminée ✔
-
-:: Lancer le script Python
-python ".\src\main.py"
