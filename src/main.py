@@ -193,7 +193,7 @@ def afficher_utilisateurs_connectés(username):
 def deconnexion (user_id, username): 
     log_event(user_id, "logout", username) 
     print("Vous avez été déconnecté !")
-    exit()
+    connexion()
     
 if __name__ == "__main__":
     connexion()
