@@ -54,29 +54,35 @@ def menu(user):
     elif selected == "2":
         envoyer_message(messages)
     elif selected == "3":
-        messages_envoyés = messages.sent_messages(user)
+        messages_envoyés = messages_envoyes(messages)
     elif selected == "4":
-        pers_connectés()
+        pers_connectés(user)
 
 def consulter_messages(messages : Messages):
     print("Voici vos messages que vous avez reçus :")
-    recus = messages.received_messages()
-    
+    recus = messages.received_messages_not_read()
+    selected = input ("Lire les messages lus ? (y/n)")
+    if selected=="y":
+        messages.received_messages_read()
+    menu(messages.username)
 
 def envoyer_message(messages : Messages):
     print("Envoyer un message :")
     recipient = input("Entrez le nom d'utilisateur du destinataire : ")
     message = input("Entrez le message que vous sohuhaitez envoyer : ")
     messages.send_message(recipient, message)
+    menu(messages.username)
 
-def messages_envoyés(messages : Messages):
+
+def messages_envoyes(messages : Messages):
     print(f"Liste des messages que {messages.username} a envoyé : ")
-    mess = messages.sent_messages()
+    mess = messages.sent_messages(messages.username)
+    menu(messages.username)
 
-    
-def pers_connectés():
+def pers_connectés(user):
     print("Voici les membres connectés :")
     # Afficher les membres connectés ici
+    menu(user)
     pass
 
 if __name__ == "__main__":

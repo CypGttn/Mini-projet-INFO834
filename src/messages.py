@@ -13,12 +13,19 @@ class Messages :
         self.collection = self.db['message']
         self.username = username
         
-    def received_messages(self):
+    def received_messages_not_read(self):
         #Récupérer le ou les messages que l'user a reçu
         messages = self.collection.find({"recipient": self.username, "read": False})
         for message in messages:
             print(f"Sender {message['sender']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
         self.collection.update_many({"recipient": self.username, "read": False}, {"$set": {"read": True}})
+        return messages
+    
+    def received_messages_read(self):
+        #Récupérer le ou les messages que l'user a reçu
+        messages = self.collection.find({"recipient": self.username, "read": True})
+        for message in messages:
+            print(f"Sender {message['sender']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
         return messages
     
     def send_message(self, recipient, message):
