@@ -13,11 +13,27 @@ class Messages :
         self.collection = self.db['message']
         self.username = username
         
-    def received_messages(self):
-        #Récupérer le ou les messages que l'user a reçu
-        messages = self.collection.find({"recipient": self.username})
-        return messages
+    def received_messages_not_read(self):
+        if not self.collection.find_one({"recipient": self.username, "read": False}):
+            print("Aucun message reçu non lu.")
+        else : 
+            #Récupérer le ou les messages que l'user a reçu
+            messages = self.collection.find({"recipient": self.username, "read": False})
+            for message in messages:
+                print(f"Sender {message['sender']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
+            self.collection.update_many({"recipient": self.username, "read": False}, {"$set": {"read": True}})
+            return messages
     
+    def received_messages_read(self):
+        if not self.collection.find_one({"recipient": self.username, "read": True}):
+            print("Aucun message reçu.")
+        else : 
+            #Récupérer le ou les messages que l'user a reçu
+            messages = self.collection.find({"recipient": self.username, "read": True})
+            for message in messages:
+                print(f"Sender {message['sender']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
+            return messages
+        
     def send_message(self, recipient, message):
         # Envoyer un message à l'utilisateur mis en paramètre à partir de celui de connecté
         # Eléments nécessaire : sender, receipt, message, date
@@ -31,8 +47,11 @@ class Messages :
         print('Message envoyé avec succès ! ')
     
     def sent_messages (self, username):
-        #Récupérer le ou les messages que l'user a envoyé
-        messages = self.collection.find({"sender": username})
-        for message in messages:
-            print(f"Sender {message['sender']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
+        if not self.collection.find_one({"sender": username}):
+            print("Aucun message envoyés.")
+        else : 
+            #Récupérer le ou les messages que l'user a reçu
+            messages = self.collection.find({"sender": username})
+            for message in messages:
+                print(f"Receiver {message['recipient']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
         

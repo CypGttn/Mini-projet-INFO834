@@ -6,6 +6,7 @@ class Connexion :
         user = liste_user.find_one({"username": username})
         if username == user["username"] and password == user["password"]:
             print("Connexion réussie !")
+            print(f"Bienvenue {username} !")
             self.connecte=True
         else:
             print("Identifiant ou mot de passe incorrect.")
