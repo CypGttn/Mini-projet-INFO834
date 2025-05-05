@@ -51,11 +51,13 @@ def afficher_utilisateurs_connectés():
         user_id = key.split(":")[1]
         events = redis_client.lrange(key, 0, 10)
 
-        last_login_index = next((i for i, ev in enumerate(events) if ev.startswith("login")), -1)
-        last_logout_index = next((i for i, ev in enumerate(events) if ev.startswith("logout")), -1)
-
-        if 0 <= last_login_index < last_logout_index or last_login_index == -1:
+        if not events:
             continue
+
+        # Vérifier si le dernier événement est un 'login'
+        last_event = events[0].decode() if isinstance(events[0], bytes) else events[0]
+        if not last_event.startswith("login"):
+            continue  # L'utilisateur est considéré comme déconnecté
 
         try:
             obj_id = ObjectId(user_id)
@@ -65,9 +67,6 @@ def afficher_utilisateurs_connectés():
                 connected_users.add(user_id)
         except InvalidId:
             continue  # Ignore les IDs invalides venant de Redis
-
-    if not connected_users:
-        print("Aucun utilisateur connecté actuellement.")
 
 
 def connexion():
