@@ -38,7 +38,6 @@ def connexion():
             connexion()
 
 def menu(user):
-    print(f"Bonjour, {user} !")
     print("Menu principal :")
     print("1. Consulter les messages")
     print("2. Envoyer un message ")
@@ -55,7 +54,7 @@ def menu(user):
     elif selected == "2":
         envoyer_message(messages)
     elif selected == "3":
-        messages_envoyés = messages_envoyes(messages)
+        messages_envoyes(messages)
     elif selected == "4":
         pers_connectés(user)
     elif selected == "5":
@@ -92,6 +91,5 @@ def deconnexion () :
     print("Vous avez été déconnecté !")
     connexion()
     
-
 if __name__ == "__main__":
     connexion()
