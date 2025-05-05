@@ -1,6 +1,7 @@
 import argparse
 from pymongo import MongoClient
-
+from connexion import Connexion
+from inscription import Inscription
 from messages import Messages
 
 #Se connecter à la base de données MongoDB
@@ -19,37 +20,30 @@ def connexion():
     if selection == "1":
         id_select = input("Entrez votre identifiant : ")
         mdp_select = input("Entrez votre mot de passe : ")
-        
-        # On récupère les infos du user choisit avec id_select
-        user = collection.find_one({"username": id_select})
-        if id_select == user["username"] and mdp_select == user["password"]:
+        conn = Connexion(id_select, mdp_select, collection)   
+        if conn.connecte == True:
             print("Connexion réussie !")
             menu(id_select)
-        else:
-            print("Identifiant ou mot de passe incorrect.")
-            
+    
     elif selection == "2":
         id_select = input("Entrez l'identifiant que vous souhaitez utiliser : ")
         mdp_select = input("Entrez le mot de passe que vous souhaitez utiliser : ")
         
-        # Vérification que l'identifiant rentrer n'esxiste pas
-        user = collection.find_one({"username": id_select})
-        if user : 
-            print("Cet identifiant existe déjà.")
-            connexion()
-        else : 
-            conn = {"username": id_select, "password": mdp_select}
-            collection.insert_one(conn)
-            
-            print("Connexion réussie !")
+        inscr = Inscription(id_select, mdp_select, collection)
+        if inscr.add :
+            print("Inscription réussie !")
             menu(id_select)
+        else :
+            print("Cet identifiant existe déjà !")
+            connexion()
 
 def menu(user):
     print(f"Bonjour, {user} !")
     print("Menu principal :")
     print("1. Consulter les messages")
     print("2. Envoyer un message ")
-    print("3. Les membres connectés")
+    print("3. Liste des messages que vous avez envoyés ")
+    print("4. Les membres connectés")
     
     selected = input ("Sélectionnez une option : ")
     
@@ -60,6 +54,8 @@ def menu(user):
     elif selected == "2":
         envoyer_message(messages)
     elif selected == "3":
+        messages_envoyés = messages.sent_messages(user)
+    elif selected == "4":
         pers_connectés()
 
 def consulter_messages(messages : Messages):
@@ -77,6 +73,11 @@ def envoyer_message(messages : Messages):
     message = input("Entrez le message que vous sohuhaitez envoyer : ")
     messages.send_message(recipient, message)
 
+def messages_envoyés(messages : Messages):
+    print(f"Liste des messages que {messages.username} a envoyé : ")
+    mess = messages.sent_messages()
+
+    
 def pers_connectés():
     print("Voici les membres connectés :")
     # Afficher les membres connectés ici
