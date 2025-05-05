@@ -1,6 +1,7 @@
 import argparse
 from pymongo import MongoClient
 from connexion import Connexion
+from inscription import Inscription
 from messages import Messages
 
 #Se connecter à la base de données MongoDB
@@ -19,8 +20,8 @@ def connexion():
     if selection == "1":
         id_select = input("Entrez votre identifiant : ")
         mdp_select = input("Entrez votre mot de passe : ")
-        connexion = Connexion(id_select, mdp_select, collection)   
-        if connexion.connecte == True:
+        conn = Connexion(id_select, mdp_select, collection)   
+        if conn.connecte == True:
             print("Connexion réussie !")
             menu(id_select)
     
@@ -28,17 +29,13 @@ def connexion():
         id_select = input("Entrez l'identifiant que vous souhaitez utiliser : ")
         mdp_select = input("Entrez le mot de passe que vous souhaitez utiliser : ")
         
-        # Vérification que l'identifiant rentrer n'esxiste pas
-        user = collection.find_one({"username": id_select})
-        if user : 
-            print("Cet identifiant existe déjà.")
-            connexion()
-        else : 
-            conn = {"username": id_select, "password": mdp_select}
-            collection.insert_one(conn)
-            
-            print("Connexion réussie !")
+        inscr = Inscription(id_select, mdp_select, collection)
+        if inscr.add :
+            print("Inscription réussie !")
             menu(id_select)
+        else :
+            print("Cet identifiant existe déjà !")
+            connexion()
 
 def menu(user):
     print(f"Bonjour, {user} !")
