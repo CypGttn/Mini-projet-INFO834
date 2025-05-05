@@ -61,10 +61,6 @@ def menu(user):
 def consulter_messages(messages : Messages):
     print("Voici vos messages que vous avez reçus :")
     recus = messages.received_messages()
-    print(recus)
-    
-    for message in recus : 
-        print(f"Sender {message['sender']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
     
 
 def envoyer_message(messages : Messages):

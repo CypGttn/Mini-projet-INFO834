@@ -15,7 +15,10 @@ class Messages :
         
     def received_messages(self):
         #Récupérer le ou les messages que l'user a reçu
-        messages = self.collection.find({"recipient": self.username})
+        messages = self.collection.find({"recipient": self.username, "read": False})
+        for message in messages:
+            print(f"Sender {message['sender']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
+        self.collection.update_many({"recipient": self.username, "read": False}, {"$set": {"read": True}})
         return messages
     
     def send_message(self, recipient, message):
