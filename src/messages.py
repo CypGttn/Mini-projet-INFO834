@@ -29,3 +29,10 @@ class Messages :
         env = {"sender": sender, "recipient": recipient, "text": message, "timestamp": timestamp, "read": False}
         self.collection.insert_one(env)
         print('Message envoyé avec succès ! ')
+    
+    def sent_messages (self, username):
+        #Récupérer le ou les messages que l'user a envoyé
+        messages = self.collection.find({"sender": username})
+        for message in messages:
+            print(f"Sender {message['sender']}, Message : {message['text']}, Timestamp : {message['timestamp']}")
+        

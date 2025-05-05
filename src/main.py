@@ -42,7 +42,8 @@ def menu(user):
     print("Menu principal :")
     print("1. Consulter les messages")
     print("2. Envoyer un message ")
-    print("3. Les membres connectés")
+    print("3. Liste des messages que vous avez envoyés ")
+    print("4. Les membres connectés")
     
     selected = input ("Sélectionnez une option : ")
     
@@ -53,6 +54,8 @@ def menu(user):
     elif selected == "2":
         envoyer_message(messages)
     elif selected == "3":
+        messages_envoyés = messages.sent_messages(user)
+    elif selected == "4":
         pers_connectés()
 
 def consulter_messages(messages : Messages):
@@ -70,6 +73,11 @@ def envoyer_message(messages : Messages):
     message = input("Entrez le message que vous sohuhaitez envoyer : ")
     messages.send_message(recipient, message)
 
+def messages_envoyés(messages : Messages):
+    print(f"Liste des messages que {messages.username} a envoyé : ")
+    mess = messages.sent_messages()
+
+    
 def pers_connectés():
     print("Voici les membres connectés :")
     # Afficher les membres connectés ici
