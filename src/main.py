@@ -44,39 +44,38 @@ def connexion():
 
 
 def menu(username, user_id):
-    while True:
-        print(f"\nBonjour, {username} !")
-        print("Menu principal :")
-        print("1. Consulter les messages")
-        print("2. Envoyer un message")
-        print("3. Voir les messages envoyés")
-        print("4. Voir les connexions globales")
-        print("5. Voir mes logs")
-        print("6. Se déconnecter")
-        print("7. Voir les utilisateurs connectés")
+    print("Menu principal :")
+    print("1. Consulter les messages")
+    print("2. Envoyer un message")
+    print("3. Voir les messages envoyés")
+    print("4. Voir les connexions globales")
+    print("5. Voir mes logs")
+    print("6. Voir les utilisateurs connectés")
+    print("7. Se déconnecter")
+    print("8. Arrêter le programme")
 
-        selected = input("Votre choix : ")
-        messages = Messages(session_manager.db, username)
+    selected = input("Votre choix : ")
+    messages = Messages(session_manager.db, username)
 
-        if selected == "1":
-            consulter_messages(messages)
-        elif selected == "2":
-            envoyer_message(messages)
-        elif selected == "3":
-            messages_envoyes(messages)
-        elif selected == "4":
-            session_manager.afficher_connexions_globales()
-        elif selected == "5":
-            session_manager.afficher_logs(user_id)
-        elif selected == "6":
-            session_manager.logout_user(user_id)
-            print("Déconnexion réussie.")
-            break
-        elif selected == "7":
-            afficher_utilisateurs_connectés()
-        else:
-            print("Option invalide.")
-
+    if selected == "1":
+        consulter_messages(messages)
+    elif selected == "2":
+        envoyer_message(messages)
+    elif selected == "3":
+        messages_envoyes(messages)
+    elif selected == "4":
+        session_manager.afficher_connexions_globales()
+    elif selected == "5":
+        session_manager.afficher_logs(user_id)
+    elif selected == "6":
+        afficher_utilisateurs_connectés(username)
+    elif selected == "7":
+        deconnexion(user_id, username)
+        connexion()
+    elif selected == "8":
+        arret_programme(user_id, username)
+    else:
+        print("Option invalide.")
 
 def consulter_messages(messages: Messages):
     print("Messages reçus :")
@@ -142,8 +141,11 @@ def afficher_utilisateurs_connectés():
 def deconnexion(user_id, username):
     session_manager.logout_user(user_id)
     print("Vous avez été déconnecté !")
-    connexion()
-
-
+    
+def arret_programme(user_id, username):
+    deconnexion(user_id, username)
+    print("Arret du programme")
+    exit()
+    
 if __name__ == "__main__":
     connexion()

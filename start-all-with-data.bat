@@ -28,6 +28,9 @@ if %errorlevel% NEQ 0 (
 )
 echo ✔ PRIMARY élu, poursuite de l'initialisation...
 
+echo Lancement du watchdog de surveillance...
+start "Mongo Watchdog" cmd /c mongo_watchdog_all.bat
+
 :: 2. Initialisation MongoDB (drop, insert, etc.)
 echo [2/3] Initialisation de la base MongoDB...
 call init_mongo_with_data.bat
