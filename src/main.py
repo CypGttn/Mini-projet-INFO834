@@ -8,9 +8,11 @@ from messages import Messages
 from bson.errors import InvalidId
 import getpass
 
+from requetes import Requetes
+
 # Connexions MongoDB et Redis
-client = MongoClient('mongodb://localhost:27017/')
-db = client['lesBellesMiches']
+mongo_client = MongoClient('mongodb://localhost:27017/')
+db = mongo_client['lesBellesMiches']
 users_collection = db['user']
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
@@ -63,8 +65,9 @@ def menu(username, user_id):
     print("4. Voir les connexions globales")
     print("5. Voir mes logs")
     print("6. Voir les utilisateurs connectés")
-    print("7. Se déconnecter")
-    print("8. Arrêter le programme")
+    print("7. Accéder aux requêtes avancées")
+    print("8. Se déconnecter")
+    print("9. Arrêter le programme")
 
     selected = input("Sélectionnez une option : ")
     messages = Messages(db, username)
@@ -82,9 +85,11 @@ def menu(username, user_id):
     elif selected == "6":
         afficher_utilisateurs_connectés(username)
     elif selected == "7":
+        afficher_requetes(user_id, username)
+    elif selected == "8":
         deconnexion(user_id, username)
         connexion()
-    elif selected == "8":
+    elif selected == "9":
         arret_programme(user_id, username)
     else:
         print("Option invalide.")
@@ -191,6 +196,21 @@ def afficher_utilisateurs_connectés(username):
     if not connected_users:
         print("Aucun utilisateur connecté actuellement.")
         
+    user = users_collection.find_one({"username": username})
+    user_id = str(user["_id"])
+    menu(username, user_id)
+
+def afficher_requetes(user_id, username):
+    print("Voici quelques statistiques sur les dernières utilisations de l'application :")
+    req = Requetes(mongo_client, redis_client)
+    print(f"Nombre total d'utilisateurs : {str(req.total_users())}")
+    user, val_conn = req.most_active_user()
+    print(f"Utilisateur qui se connecte le plus est {user} avec {val_conn} connexions.")
+    user, val_mess = req.most_messages_send()
+    print(f"L'utilisateur qui envoie le plus de message est {user} avec {val_mess} messages envoyés.")
+    user, val_mess = req.most_messages_receive()
+    print(f"L'utilisateur qui reçoit le plus de message est {user} avec {val_mess} messages reçus.")
+
     user = users_collection.find_one({"username": username})
     user_id = str(user["_id"])
     menu(username, user_id)
