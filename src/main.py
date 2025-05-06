@@ -63,6 +63,7 @@ def menu(username, user_id):
     print("5. Voir mes logs")
     print("6. Voir les utilisateurs connectés")
     print("7. Se déconnecter")
+    print("8. Arrêter le programme")
 
     selected = input("Sélectionnez une option : ")
     messages = Messages(db, username)
@@ -81,6 +82,9 @@ def menu(username, user_id):
         afficher_utilisateurs_connectés(username)
     elif selected == "7":
         deconnexion(user_id, username)
+        connexion()
+    elif selected == "8":
+        arret_programme(user_id, username)
     else:
         print("Option invalide.")
 
@@ -193,7 +197,11 @@ def afficher_utilisateurs_connectés(username):
 def deconnexion (user_id, username): 
     log_event(user_id, "logout", username) 
     print("Vous avez été déconnecté !")
-    connexion()
+    
+def arret_programme(user_id, username):
+    deconnexion(user_id, username)
+    print("Arret du programme")
+    exit()
     
 if __name__ == "__main__":
     connexion()
