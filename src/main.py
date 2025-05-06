@@ -37,7 +37,7 @@ def connexion():
             user_id = str(user["_id"])
             session_manager.log_event(user_id, "login")
             print("Inscription réussie !")
-            menu(username, user_id, session_manager)
+            menu(username, user_id)
         else:
             print("Cet identifiant existe déjà !")
             connexion()
@@ -62,11 +62,17 @@ def menu(username, user_id):
     elif selected == "2":
         envoyer_message(messages)
     elif selected == "3":
-        messages_envoyes(messages)
+        messages_envoyes(messages, username)
     elif selected == "4":
         session_manager.afficher_connexions_globales()
+        user = session_manager.users_collection.find_one({"username": username})
+        user_id = str(user["_id"])
+        menu(username, user_id)
     elif selected == "5":
         session_manager.afficher_logs(user_id)
+        user = session_manager.users_collection.find_one({"username": username})
+        user_id = str(user["_id"])
+        menu(username, user_id)
     elif selected == "6":
         afficher_utilisateurs_connectés(username)
     elif selected == "7":
@@ -98,22 +104,32 @@ def envoyer_message(messages: Messages):
         print("Message envoyé.")
     except Exception as e:
         print(f"Erreur lors de l'envoi : {e}")
+    user = session_manager.users_collection.find_one({"username": messages.username})
+    user_id = str(user["_id"])
+    menu(messages.username, user_id)
+    
 
 
-def messages_envoyes(messages: Messages):
+def messages_envoyes(messages: Messages, username):
     print("Messages envoyés :")
     try:
         sent = messages.sent_messages(messages.username)
         if not sent:
             print("Vous n'avez envoyé aucun message.")
-            return
-        for message in sent:
-            print(f"À {message.get('recipient', 'Inconnu')} | {message.get('text', '')} | {message.get('timestamp', '')}")
+        else:
+            for message in sent:
+                print(f"À {message.get('recipient', 'Inconnu')} | {message.get('text', '')} | {message.get('timestamp', '')}")
     except Exception as e:
         print(f"Erreur lors de la récupération des messages envoyés : {e}")
 
+    # Revenir au menu dans tous les cas
+    user = session_manager.users_collection.find_one({"username": messages.username})
+    user_id = str(user["_id"])
+    menu(messages.username, user_id)
 
-def afficher_utilisateurs_connectés():
+
+
+def afficher_utilisateurs_connectés(username):
     print("\nUtilisateurs connectés récemment :")
     redis_client = session_manager.redis_client
     users_collection = session_manager.users_collection
@@ -137,6 +153,10 @@ def afficher_utilisateurs_connectés():
                     print(f"- {user['username']} (ID: {user_id})")
         except (InvalidId, IndexError):
             continue
+    user = session_manager.users_collection.find_one({"username": username})
+    user_id = str(user["_id"])
+    menu(username, user_id)    
+    
 
 def deconnexion(user_id, username):
     session_manager.logout_user(user_id)
