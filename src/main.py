@@ -1,39 +1,27 @@
 import datetime
-import redis
 from bson import ObjectId
-from pymongo import MongoClient
+from bson.errors import InvalidId
 from connexion import Connexion
 from inscription import Inscription
 from messages import Messages
-from bson.errors import InvalidId
-import getpass
-
 from requetes import Requetes
+from user_session_manager import UserSessionManager
 
-# Connexions MongoDB et Redis
-mongo_client = MongoClient('mongodb://localhost:27017/')
-db = mongo_client['lesBellesMiches']
-users_collection = db['user']
-redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+# Initialisation du gestionnaire de sessions
+session_manager = UserSessionManager()
+
 
 def connexion():
     print("Bienvenue dans Les Belles Miches ! Le chat qui fait gonfler ton temps d'écran.")
-
     selection = input("Tapez 1 pour vous connecter. Tapez 2 pour créer un compte : ")
+    collection = session_manager.users_collection
 
-    # Connexion avec la table 
-    collection = db['user']
-    
     if selection == "1":
         username = input("Entrez votre identifiant : ")
-        password = getpass.getpass("Entrez votre mot de passe : ")
-        user = users_collection.find_one({"username": username})
+        password = input("Entrez votre mot de passe : ")
+        user_id = session_manager.login_user(username, password)
 
-        conn = Connexion(username, password, collection)   
-        if conn.connecte == True:
-            print("Connexion réussie !")
-            user_id = str(user["_id"])
-            log_event(user_id, "login", username)
+        if user_id:
             print("Connexion réussie !")
             menu(username, user_id)
         else:
@@ -43,19 +31,18 @@ def connexion():
     elif selection == "2":
         username = input("Choisissez un identifiant : ")
         password = input("Choisissez un mot de passe : ")
-
         inscr = Inscription(username, password, collection)
-        if inscr.add :
-            user = users_collection.find_one({"username": username})
-            print("Inscription réussie !")
+
+        if inscr.add:
+            user = collection.find_one({"username": username})
             user_id = str(user["_id"])
-            log_event(user_id, "login", username)
-            
+            session_manager.log_event(user_id, "login")
             print("Inscription réussie !")
-            menu(username, str(user_id))
-        else :
+            menu(username, user_id)
+        else:
             print("Cet identifiant existe déjà !")
             connexion()
+
 
 def menu(username, user_id):
     print("Menu principal :")
@@ -69,19 +56,25 @@ def menu(username, user_id):
     print("8. Se déconnecter")
     print("9. Arrêter le programme")
 
-    selected = input("Sélectionnez une option : ")
-    messages = Messages(db, username)
+    selected = input("Votre choix : ")
+    messages = Messages(session_manager.db, username)
 
     if selected == "1":
         consulter_messages(messages)
     elif selected == "2":
         envoyer_message(messages)
     elif selected == "3":
-        messages_envoyes(messages)
+        messages_envoyes(messages, username)
     elif selected == "4":
-        afficher_connexions_globales(username)
+        session_manager.afficher_connexions_globales()
+        user = session_manager.users_collection.find_one({"username": username})
+        user_id = str(user["_id"])
+        menu(username, user_id)
     elif selected == "5":
-        afficher_logs(user_id, username)
+        session_manager.afficher_logs(user_id)
+        user = session_manager.users_collection.find_one({"username": username})
+        user_id = str(user["_id"])
+        menu(username, user_id)
     elif selected == "6":
         afficher_utilisateurs_connectés(username)
     elif selected == "7":
@@ -103,12 +96,11 @@ def consulter_messages(messages: Messages):
             messages.received_messages_read()
     except Exception as e:
         print(f"Erreur lors de la lecture des messages : {e}")
-    user = users_collection.find_one({"username": messages.username})
+    user = session_manager.users_collection.find_one({"username": messages.username})
     user_id = str(user["_id"])
     menu(messages.username, user_id)
-    
+
 def envoyer_message(messages: Messages):
-    print("Envoyer un message :")
     destinataire = input("Nom du destinataire : ")
     contenu = input("Message : ")
     try:
@@ -116,85 +108,57 @@ def envoyer_message(messages: Messages):
         print("Message envoyé.")
     except Exception as e:
         print(f"Erreur lors de l'envoi : {e}")
-    user = users_collection.find_one({"username": messages.username})
+    user = session_manager.users_collection.find_one({"username": messages.username})
     user_id = str(user["_id"])
     menu(messages.username, user_id)
+    
 
-def messages_envoyes(messages : Messages):
-    try : 
-        print(f"Liste des messages que {messages.username} a envoyé : ")
-        mess = messages.sent_messages(messages.username)
+
+def messages_envoyes(messages: Messages, username):
+    print("Messages envoyés :")
+    try:
+        sent = messages.sent_messages(messages.username)
+        if not sent:
+            print("Vous n'avez envoyé aucun message.")
+        else:
+            for message in sent:
+                print(f"À {message.get('recipient', 'Inconnu')} | {message.get('text', '')} | {message.get('timestamp', '')}")
     except Exception as e:
-        print(f"Erreur lors de la lecture des messages : {e}")
-    user = users_collection.find_one({"username": messages.username})
+        print(f"Erreur lors de la récupération des messages envoyés : {e}")
+
+    # Revenir au menu dans tous les cas
+    user = session_manager.users_collection.find_one({"username": messages.username})
     user_id = str(user["_id"])
     menu(messages.username, user_id)
 
-def log_event(user_id, event_type, username):
-    timestamp = datetime.datetime.now().isoformat()
-    event = f"{event_type}:{timestamp}"
-    redis_client.lpush(f"user:{user_id}:events", event)
 
-    if event_type == "login":
-        user = users_collection.find_one({"_id": ObjectId(user_id)})
-        if user:
-            username = user.get("username")
-            redis_client.lpush("global:events", f"User {username} logged in at {timestamp}")
-    print(f"Utilisateur {user_id} {event_type} à {timestamp}")
-    if event_type != "logout":
-        user = users_collection.find_one({"username": username})
-        user_id = str(user["_id"])
-        menu(username, user_id)
-
-def afficher_logs(user_id, username):
-    logs = redis_client.lrange(f"user:{user_id}:events", 0, 9)
-    if logs:
-        print("\nDerniers logs :")
-        for log in logs:
-            print(log)
-    else:
-        print("Aucun log trouvé.")
-    user = users_collection.find_one({"username": username})
-    user_id = str(user["_id"])
-    menu(username, user_id)
-
-def afficher_connexions_globales(username):
-    logs = redis_client.lrange("global:events", 0, 9)
-    if logs:
-        print("\nDernières connexions globales :")
-        for log in logs:
-            print(log)
-    else:
-        print("Aucune connexion globale trouvée.")
-    user = users_collection.find_one({"username": username})
-    user_id = str(user["_id"])
-    menu(username, user_id)
 
 def afficher_utilisateurs_connectés(username):
     print("\nUtilisateurs connectés récemment :")
-    connected_users = set()
+    redis_client = session_manager.redis_client
+    users_collection = session_manager.users_collection
 
     for key in redis_client.scan_iter("user:*:events"):
-        user_id = key.split(":")[1]
-        events = redis_client.lrange(key, 0, 10)
+        try:
+            user_id = key.split(":")[1]
+            events = redis_client.lrange(key, 0, 10)
+            last_login = None
+            last_logout = None
 
-        last_login_index = next((i for i, ev in enumerate(events) if ev.startswith("login")), -1)
-        last_logout_index = next((i for i, ev in enumerate(events) if ev.startswith("logout")), -1)
+            for event in events:
+                if event.startswith("login:"):
+                    last_login = event.split("login:")[1]
+                elif event.startswith("logout:"):
+                    last_logout = event.split("logout:")[1]
 
-        if 0 <= last_login_index < last_logout_index or last_login_index == -1:
+            if last_login and (not last_logout or last_login > last_logout):
+                user = users_collection.find_one({"_id": ObjectId(user_id)})
+                if user:
+                    print(f"- {user['username']} (ID: {user_id})")
+        except (InvalidId, IndexError):
             continue
 
-        try:
-            obj_id = ObjectId(user_id)
-            user = users_collection.find_one({"_id": obj_id})
-            if user:
-                print(f"- {user.get('username')} (ID: {user_id})")
-                connected_users.add(user_id)
-        except InvalidId:
-            continue  # Ignore les IDs invalides venant de Redis
-
-    if not connected_users:
-        print("Aucun utilisateur connecté actuellement.")
+    
         
     user = users_collection.find_one({"username": username})
     user_id = str(user["_id"])
@@ -202,7 +166,7 @@ def afficher_utilisateurs_connectés(username):
 
 def afficher_requetes(user_id, username):
     print("Voici quelques statistiques sur les dernières utilisations de l'application :")
-    req = Requetes(mongo_client, redis_client)
+    req = Requetes(session_manager.mongo_client, session_manager.redis_client)
     print(f"Nombre total d'utilisateurs : {str(req.total_users())}")
     user, val_conn = req.most_active_user()
     print(f"Utilisateur qui se connecte le plus est {user} avec {val_conn} connexions.")
@@ -211,12 +175,13 @@ def afficher_requetes(user_id, username):
     user, val_mess = req.most_messages_receive()
     print(f"L'utilisateur qui reçoit le plus de message est {user} avec {val_mess} messages reçus.")
 
-    user = users_collection.find_one({"username": username})
+    user = session_manager.users_collection.find_one({"username": username})
     user_id = str(user["_id"])
-    menu(username, user_id)
+    menu(username, user_id)    
+    
 
-def deconnexion (user_id, username): 
-    log_event(user_id, "logout", username) 
+def deconnexion(user_id, username):
+    session_manager.logout_user(user_id)
     print("Vous avez été déconnecté !")
     
 def arret_programme(user_id, username):
