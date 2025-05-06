@@ -25,7 +25,7 @@ start /min "MongoDB1" cmd /k mongod --replSet rs0 --port %MONGO_PORT1% --dbpath 
 start /min "MongoDB2" cmd /k mongod --replSet rs0 --port %MONGO_PORT2% --dbpath "%BASE_DIR%\data\r2" --bind_ip localhost --oplogSize 128
 start /min "MongoDB3" cmd /k mongod --replSet rs0 --port %MONGO_PORT3% --dbpath "%BASE_DIR%\data\r3" --bind_ip localhost --oplogSize 128
 
-timeout /t 30 >nul
+timeout /t 10 >nul
 
 echo Vérification de l'état des instances MongoDB...
 
@@ -81,7 +81,7 @@ mongosh --port %MONGO_PORT1% < init_rs.js
 
 
 :: Vérifie si le Replica Set est bien initialisé après un délai
-timeout /t 20 >nul
+timeout /t 10 >nul
 echo Vérification du Replica Set...
 mongosh --port %MONGO_PORT1% --eval "rs.status()"
 
