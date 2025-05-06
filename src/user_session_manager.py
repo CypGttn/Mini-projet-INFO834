@@ -40,16 +40,21 @@ class UserSessionManager:
         if user:
             print("Utilisateur trouvé.")
             stored_hash = user.get("password")
-            if stored_hash and bcrypt.checkpw(password.encode('utf-8'), stored_hash):
-                user_id = str(user["_id"])
-                self.log_event(user_id, "login")
-                return user_id
-            else:
-                print("Mot de passe incorrect.")
+
+            try:
+                if stored_hash and bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
+                    user_id = str(user["_id"])
+                    self.log_event(user_id, "login")
+                    return user_id
+                else:
+                    print("Mot de passe incorrect.")
+            except Exception as e:
+                print(f"Erreur lors de la vérification du mot de passe : {e}")
         else:
             print("Utilisateur non trouvé.")
 
-            return None
+        return None
+
 
     def logout_user(self, user_id):
         self.log_event(user_id, "logout")
