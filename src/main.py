@@ -6,6 +6,7 @@ from connexion import Connexion
 from inscription import Inscription
 from messages import Messages
 from bson.errors import InvalidId
+import getpass
 
 # Connexions MongoDB et Redis
 client = MongoClient('mongodb://localhost:27017/')
@@ -23,7 +24,7 @@ def connexion():
     
     if selection == "1":
         username = input("Entrez votre identifiant : ")
-        password = input("Entrez votre mot de passe : ")
+        password = getpass.getpass("Entrez votre mot de passe : ")
         user = users_collection.find_one({"username": username})
 
         conn = Connexion(username, password, collection)   
