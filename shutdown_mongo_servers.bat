@@ -8,6 +8,11 @@ set MONGO_PORT2=27018
 set MONGO_PORT3=27019
 
 echo -------------------------------------
+echo Arrêt de Mongo Watchdog...
+echo -------------------------------------
+taskkill /FI "WINDOWTITLE eq Mongo Watchdog" /T /F >nul 2>&1
+
+echo -------------------------------------
 echo Arrêt propre des instances MongoDB...
 echo -------------------------------------
 
@@ -23,10 +28,11 @@ echo -------------------------------------
 echo Vérification : fermeture forcée si nécessaire...
 echo -------------------------------------
 
-:: Fermer toutes les instances restantes de mongod
-taskkill /FI "WINDOWTITLE eq MongoDB1" /T /F >nul 2>&1
-taskkill /FI "WINDOWTITLE eq MongoDB2" /T /F >nul 2>&1
-taskkill /FI "WINDOWTITLE eq MongoDB3" /T /F >nul 2>&1
+
+for /f "tokens=2 delims=," %%i in ('tasklist /v /fo csv ^| findstr /i "cmd.exe" ^| findstr /i "MongoDB"') do (
+    taskkill /PID %%i /T /F >nul 2>&1
+)
+
 
 echo -------------------------------------
 echo ✔ Tous les serveurs MongoDB sont arrêtés.
