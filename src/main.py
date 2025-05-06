@@ -160,7 +160,7 @@ def afficher_connexions_globales(username):
     user_id = str(user["_id"])
     menu(username, user_id)
 
-def afficher_utilisateurs_connectés(username):
+def afficher_utilisateurs_connectés(username=None):
     print("\nUtilisateurs connectés récemment :")
     connected_users = set()
 
@@ -168,32 +168,134 @@ def afficher_utilisateurs_connectés(username):
         user_id = key.split(":")[1]
         events = redis_client.lrange(key, 0, 10)
 
-        last_login_index = next((i for i, ev in enumerate(events) if ev.startswith("login")), -1)
-        last_logout_index = next((i for i, ev in enumerate(events) if ev.startswith("logout")), -1)
-
-        if 0 <= last_login_index < last_logout_index or last_login_index == -1:
+        if not events:
             continue
 
-        try:
-            obj_id = ObjectId(user_id)
-            user = users_collection.find_one({"_id": obj_id})
-            if user:
-                print(f"- {user.get('username')} (ID: {user_id})")
-                connected_users.add(user_id)
-        except InvalidId:
-            continue  # Ignore les IDs invalides venant de Redis
+        last_login = None
+        last_logout = None
 
-    if not connected_users:
-        print("Aucun utilisateur connecté actuellement.")
+        for event in events:
+            if event.startswith("login:"):
+                last_login = event
+            elif event.startswith("logout:"):
+                last_logout = event
+
+        # Si le dernier login est plus récent que le dernier logout, l'utilisateur est considéré comme connecté
+        if last_login and (not last_logout or last_login > last_logout):
+            try:
+                obj_id = ObjectId(user_id)
+                user = users_collection.find_one({"_id": obj_id})
+                if user:
+                    print(f"- {user.get('username')} (ID: {user_id})")
+                    connected_users.add(user_id)
+            except InvalidId:
+                continue  # Ignore les IDs invalides venant de Redis
+
+
+
+def connexion():
+    print("Bienvenue dans Les Belles Miches ! Le chat qui fait gonfler ton temps d'écran.")
+
+    selection = input("Tapez 1 pour vous connecter. Tapez 2 pour créer un compte : ")
+
+    if selection == "1":
+        username = input("Entrez votre identifiant : ")
+        password = input("Entrez votre mot de passe : ")
+        user = users_collection.find_one({"username": username})
+
+        if user and user.get("password") == password:
+            user_id = str(user["_id"])
+            log_event(user_id, "login")
+            print("Connexion réussie !")
+            menu(username, user_id)
+        else:
+            print("Identifiants incorrects.")
+            connexion()
+
+    elif selection == "2":
+        username = input("Choisissez un identifiant : ")
+        password = input("Choisissez un mot de passe : ")
+
+        if users_collection.find_one({"username": username}):
+            print("Cet identifiant existe déjà.")
+            connexion()
+        else:
+            new_id = users_collection.insert_one({"username": username, "password": password}).inserted_id
+            log_event(str(new_id), "login")
+            print("Inscription réussie !")
+            menu(username, str(new_id))
+
+def menu(username, user_id):
+    while True:
+        print(f"\nBonjour, {username} !")
+        print("Menu principal :")
+        print("1. Consulter les messages")
+        print("2. Envoyer un message")
+        print("3. Voir les messages envoyés")
+        print("4. Voir les connexions globales")
+        print("5. Voir mes logs")
+        print("6. Se déconnecter")
+        print("7. Voir les utilisateurs connectés")
+
+        selected = input("Votre choix : ")
+        messages = Messages(db, username)
+
+        if selected == "1":
+            consulter_messages(messages)
+        elif selected == "2":
+            envoyer_message(messages)
+        elif selected == "3":
+            messages_envoyés(messages)
+        elif selected == "4":
+            afficher_connexions_globales()
+        elif selected == "5":
+            afficher_logs(user_id)
+        elif selected == "6":
+            log_event(user_id, "logout")
+            print("Déconnexion réussie.")
+            break
+        elif selected == "7":
+            afficher_utilisateurs_connectés()
+        else:
+            print("Option invalide.")
+
+def consulter_messages(messages: Messages):
+    print("Messages reçus :")
+    try:
+        recus = messages.received_messages()
+        if not recus:
+            print("Aucun message reçu.")
+            return
+        for message in recus:
+            print(f"De {message.get('sender', 'Inconnu')} | {message.get('text', '')} | {message.get('timestamp', '')}")
+    except Exception as e:
+        print(f"Erreur lors de la lecture des messages : {e}")
+
+def envoyer_message(messages: Messages):
+    destinataire = input("Nom du destinataire : ")
+    contenu = input("Message : ")
+    try:
+        messages.send_message(destinataire, contenu)
+        print("Message envoyé.")
+    except Exception as e:
+        print(f"Erreur lors de l'envoi : {e}")
+
+def messages_envoyés(messages: Messages):
+    print("Messages envoyés :")
+    try:
+        sent = messages.sent_messages(messages.username)
+        if not sent:
+            print("Vous n'avez envoyé aucun message.")
+            return
+        for message in sent:
+            print(f"À {message.get('recipient', 'Inconnu')} | {message.get('text', '')} | {message.get('timestamp', '')}")
+    except Exception as e:
+        print(f"Erreur lors de la récupération des messages envoyés : {e}")
         
-    user = users_collection.find_one({"username": username})
-    user_id = str(user["_id"])
-    menu(username, user_id)
-
 def deconnexion (user_id, username): 
     log_event(user_id, "logout", username) 
     print("Vous avez été déconnecté !")
-    exit()
-    
+    connexion()
+
 if __name__ == "__main__":
     connexion()
