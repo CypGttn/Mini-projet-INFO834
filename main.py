@@ -1,10 +1,10 @@
 import datetime
 from bson import ObjectId
 from bson.errors import InvalidId
-from connexion import Connexion
-from inscription import Inscription
-from messages import Messages
-from user_session_manager import UserSessionManager
+from modules.connexion import Connexion
+from modules.inscription import Inscription
+from modules.messages import Messages
+from modules.user_session_manager import UserSessionManager
 
 # Initialisation du gestionnaire de sessions
 session_manager = UserSessionManager()
