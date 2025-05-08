@@ -2,7 +2,7 @@ from bson import ObjectId
 from flask import Flask, render_template, request, redirect, url_for, session
 import datetime
 
-from flask_socketio import SocketIO, send
+from flask_socketio import SocketIO, send, join_room
 from pymongo import MongoClient
 import redis
 from modules.connexion import Connexion
@@ -66,44 +66,61 @@ def menu():
     print("rendering menu.html")
     return render_template('menu.html', username=username)
 
-@app.route('/messages', methods=['GET'])
-def messages_display():
+@app.route('/messages', methods=['GET', 'POST'])
+def messages():
     user_id = session.get('user_id')
     if not user_id:
         return redirect(url_for('login'))
 
-    received_messages = db.message.find({'recipient': ObjectId(user_id)})
-    return render_template('messages_display.html', messages=received_messages or [])
-
-@app.route('/send_message', methods=['GET', 'POST'])
-def send_message():
     if request.method == 'POST':
-        sender_id = session.get('user_id')
+        sender_id = user_id
         recipient_username = request.form['recipient']
-        recipient_document = db.user.find_one({ "username": recipient_username})
-        recipient_id = recipient_document["_id"]
         text = request.form['message']
 
-        if not sender_id or not recipient_id or not text:
-            return "Champs manquants", 400
+        recipient = db.user.find_one({"username": recipient_username})
+        if not recipient:
+            return "Utilisateur destinataire introuvable", 400
 
         message = {
             'sender': ObjectId(sender_id),
-            'recipient': recipient_id,
+            'recipient': recipient["_id"],
             'text': text,
             'timestamp': datetime.datetime.utcnow(),
             'read': False
         }
         db.message.insert_one(message)
-        return redirect(url_for('messages_display'))
 
-    # GET request: afficher le formulaire pour envoyer un message
-    return render_template('send_message.html')
+        # Emission du message en temps réel
+        sender = db.user.find_one({'_id': ObjectId(sender_id)})
+        socketio.emit('new_message', {
+            'sender': sender["username"],
+            'text': text,
+            'timestamp': message['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+        })
 
+        return redirect(url_for('messages'))
+
+    received_messages = db.message.find({'recipient': ObjectId(user_id)})
+    enriched_messages = []
+    for msg in received_messages:
+        sender = db.user.find_one({'_id': msg['sender']})
+        enriched_messages.append({
+            'sender': sender['username'],
+            'text': msg['text'],
+            'timestamp': msg['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+        })
+
+    return render_template('messages.html', messages=enriched_messages)
 @app.route('/logout')
 def logout():
     session.clear()  # ou ton système de session personnalisé
     return redirect(url_for('login'))
+
+@socketio.on('connect')
+def handle_connect():
+    user_id = session.get('user_id')
+    if user_id:
+        join_room(str(user_id))
 
 @socketio.on('message')
 def handle_message(msg):

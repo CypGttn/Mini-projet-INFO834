@@ -1,18 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Messages</title>
+    <title>Messages en temps réel</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var socket = io();
+
+            socket.on('new_message', function (msg) {
+                var container = document.getElementById('messages');
+                var p = document.createElement('p');
+                p.textContent = msg.sender + ': ' + msg.text + ' - ' + msg.timestamp;
+                container.appendChild(p);
+            });
+        });
+    </script>
 </head>
 <body>
     <h2>Messages reçus</h2>
-    {% for message in messages %}
-        <p>{{ message.sender }}: {{ message.text }} - {{ message.timestamp }}</p>
-    {% endfor %}
-    <form method="POST" action="{{ url_for('send_message') }}">
+    <div id="messages">
+        {% for message in messages %}
+            <p>{{ message.sender }}: {{ message.text }} - {{ message.timestamp }}</p>
+        {% endfor %}
+    </div>
+
+    <h3>Envoyer un message</h3>
+    <form method="POST" action="{{ url_for('messages') }}">
         <input type="text" name="recipient" placeholder="Destinataire" required>
-        <textarea name="message" placeholder="Message" required></textarea>
+        <textarea name="message" placeholder="Votre message" required></textarea>
         <button type="submit">Envoyer</button>
     </form>
+
     <a href="{{ url_for('menu') }}">Retour au menu</a>
 </body>
 </html>
