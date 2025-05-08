@@ -8,7 +8,7 @@ db.user.insertMany([
     { username: "alice", password: "alice" },
     { username: "bob", password: "bob" }
 ]);
-
+/*
 db.message.insertOne({
     sender: "alice",
     recipient: "bob",
@@ -16,3 +16,4 @@ db.message.insertOne({
     timestamp: new Date(),
     read: false
 });
+*/

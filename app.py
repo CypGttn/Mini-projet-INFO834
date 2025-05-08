@@ -1,3 +1,4 @@
+from bson import ObjectId
 from flask import Flask, render_template, request, redirect, url_for, session
 import datetime
 
@@ -36,6 +37,7 @@ def login():
         if user_id:
             session['user_id'] = user_id
             session['username'] = username
+            print("redirection to \menu")
             return redirect(url_for('menu'))
         else:
             return "Identifiants incorrects", 401
@@ -58,8 +60,10 @@ def register():
 @app.route('/menu')
 def menu():
     if 'user_id' not in session:
+        print("user_id not in session")
         return redirect(url_for('login'))
     username = session['username']
+    print("rendering menu.html")
     return render_template('menu.html', username=username)
 
 @app.route('/messages', methods=['GET'])
@@ -68,27 +72,29 @@ def messages_display():
     if not user_id:
         return redirect(url_for('login'))
 
-    received_messages = db.messages.find({'receiver': user_id})
+    received_messages = db.message.find({'recipient': ObjectId(user_id)})
     return render_template('messages_display.html', messages=received_messages or [])
 
-app.route('/send_message', methods=['GET', 'POST'])
+@app.route('/send_message', methods=['GET', 'POST'])
 def send_message():
     if request.method == 'POST':
         sender_id = session.get('user_id')
-        recipient = request.form['recipient']
+        recipient_username = request.form['recipient']
+        recipient_document = db.user.find_one({ "username": recipient_username})
+        recipient_id = recipient_document["_id"]
         text = request.form['message']
 
-        if not sender_id or not recipient or not text:
+        if not sender_id or not recipient_id or not text:
             return "Champs manquants", 400
 
         message = {
-            'sender': sender_id,
-            'receiver': recipient,
+            'sender': ObjectId(sender_id),
+            'recipient': recipient_id,
             'text': text,
             'timestamp': datetime.datetime.utcnow(),
             'read': False
         }
-        db.messages.insert_one(message)
+        db.message.insert_one(message)
         return redirect(url_for('messages_display'))
 
     # GET request: afficher le formulaire pour envoyer un message
