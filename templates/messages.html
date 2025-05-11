@@ -7,13 +7,34 @@
         document.addEventListener("DOMContentLoaded", function () {
             var socket = io();
 
+            // Partie 2 : rejoindre sa room personnelle
+            const userId = "{{ user_id }}";  // <-- Tu dois passer user_id depuis Flask
+            const username = "{{ username }}";  // Il faut aussi passer username depuis Flask
+            socket.emit('join', { user_id: userId });
+
             socket.on('new_message', function (msg) {
                 var container = document.getElementById('messages');
                 var p = document.createElement('p');
                 p.textContent = msg.sender + ': ' + msg.text + ' - ' + msg.timestamp;
                 container.appendChild(p);
             });
+            // Envoi d'un message sans recharger la page
+            document.getElementById('message-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const recipient = document.getElementById('recipient').value;
+                const message = document.getElementById('message').value;
+
+                socket.emit('send_message', {
+                    sender: username,
+                    sender_id: userId,
+                    recipient: recipient,
+                    text: message
+                });
+
+                document.getElementById('message').value = '';
+            });
         });
+
     </script>
 </head>
 <body>
@@ -25,11 +46,12 @@
     </div>
 
     <h3>Envoyer un message</h3>
-    <form method="POST" action="{{ url_for('messages') }}">
-        <input type="text" name="recipient" placeholder="Destinataire" required>
-        <textarea name="message" placeholder="Votre message" required></textarea>
+    <form id="message-form">
+        <input type="text" id="recipient" placeholder="Destinataire" required>
+        <textarea id="message" placeholder="Votre message" required></textarea>
         <button type="submit">Envoyer</button>
     </form>
+    
 
     <a href="{{ url_for('menu') }}">Retour au menu</a>
 </body>
