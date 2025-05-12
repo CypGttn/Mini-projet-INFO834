@@ -7,15 +7,14 @@ db.createCollection("message");
 db.user.insertMany([
     {
         username: "alice",
-        // hash de "alice" avec bcrypt (ex: saltRounds=10)
-        password: "$2b$10$JH9U0mlYdOZUn1Yh1K27ZOD1xEY7DSo0U.mPZsvSvmxbn0IKFuj4a"
+        password: Binary.createFromBase64("JDJiJDEwJEpIOVUwbWxZZE9aVW4xWWgxSzI3Wk9EMXhFWTdEU28wVS5tUFpzdlN2bXhibjBJS0Z1ajRh", 0)
     },
     {
         username: "bob",
-        // hash de "bob"
-        password: "$2b$10$C2BDRrsxey2RJuTkVWc0.eTy6U1DoDXGCLEqDTRRppn2uz4VpFEbC"
+        password: Binary.createFromBase64("JDJiJDEwJkMyQkRScnN4ZXkyUkp1VGtWV2MwLmVUeTZVMURvRFhHQ0xFcUREUlJwcG4ydXo0VnBGRWJD", 0)
     }
 ]);
+
 
 db.message.insertOne({
     sender: "alice",
