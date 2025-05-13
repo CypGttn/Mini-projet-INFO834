@@ -12,7 +12,7 @@ session_manager = UserSessionManager()
 
 def connexion():
     print("Bienvenue dans Les Belles Miches ! Le chat qui fait gonfler ton temps d'écran.")
-    selection = input("Tapez 1 pour vous connecter. Tapez 2 pour créer un compte : ")
+    selection = input("Tapez 1 pour vous connecter. Tapez 2 pour créer un compte. Tapez 3 pour arrêter le programme : ")
     collection = session_manager.users_collection
 
     if selection == "1":
@@ -41,6 +41,8 @@ def connexion():
         else:
             print("Cet identifiant existe déjà !")
             connexion()
+    elif selection == "3":
+        arret_programme_accueil()
 
 
 def menu(username, user_id):
@@ -185,6 +187,10 @@ def deconnexion(user_id, username):
     
 def arret_programme(user_id, username):
     deconnexion(user_id, username)
+    print("Arret du programme")
+    exit()
+    
+def arret_programme_accueil():
     print("Arret du programme")
     exit()
     
