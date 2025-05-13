@@ -1,4 +1,5 @@
 import datetime
+import getpass
 from bson import ObjectId
 from bson.errors import InvalidId
 from modules.connexion import Connexion
@@ -17,7 +18,7 @@ def connexion():
 
     if selection == "1":
         username = input("Entrez votre identifiant : ")
-        password = input("Entrez votre mot de passe : ")
+        password = getpass.getpass("Entrez votre mot de passe : ")
         user_id = session_manager.login_user(username, password)
 
         if user_id:
