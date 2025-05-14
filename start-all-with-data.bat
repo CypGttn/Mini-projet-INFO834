@@ -37,7 +37,7 @@ call init_mongo_with_data.bat
 
 :: 3. Lancer l'application Python
 echo [3/3] Lancement de l'application Python...
-python .\main.py
+python .\app.py
 
 echo =====================================
 echo L'application est prête à être utilisée
