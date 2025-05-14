@@ -35,6 +35,8 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
+        session_manager.login_user(username, password)
+        
         # Recherche de l'utilisateur dans la base
         user = db.user.find_one({'username': username})
         if user:
