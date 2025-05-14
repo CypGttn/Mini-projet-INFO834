@@ -42,7 +42,12 @@ class UserSessionManager:
             stored_hash = user.get("password")
 
             try:
-                if stored_hash and bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
+                # S'assurer que le mot de passe haché est bien des bytes
+                if isinstance(stored_hash, str):
+                    stored_hash = stored_hash.encode('utf-8')
+
+                password_bytes = password.encode('utf-8')
+                if bcrypt.checkpw(password_bytes, stored_hash):
                     user_id = str(user["_id"])
                     self.log_event(user_id, "login")
                     return user_id
@@ -54,7 +59,6 @@ class UserSessionManager:
             print("Utilisateur non trouvé.")
 
         return None
-
 
     def logout_user(self, user_id):
         self.log_event(user_id, "logout")
