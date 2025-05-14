@@ -71,7 +71,7 @@ class Requetes :
         
         for username in self.usernames:
             # On compte le nombre de messages envoyés par chaque utilisateur
-            sent_messages = collection.find({"sender": username})
+            sent_messages = collection.find({"recipient": username})
             for message in sent_messages:
                 counts[username] += 1
         

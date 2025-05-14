@@ -1,11 +1,12 @@
 import datetime
+import getpass
 from bson import ObjectId
 from bson.errors import InvalidId
 from connexion import Connexion
 from inscription import Inscription
 from messages import Messages
-from requetes import Requetes
 from user_session_manager import UserSessionManager
+from requetes import Requetes
 
 # Initialisation du gestionnaire de sessions
 session_manager = UserSessionManager()
@@ -13,12 +14,12 @@ session_manager = UserSessionManager()
 
 def connexion():
     print("Bienvenue dans Les Belles Miches ! Le chat qui fait gonfler ton temps d'écran.")
-    selection = input("Tapez 1 pour vous connecter. Tapez 2 pour créer un compte : ")
+    selection = input("Tapez 1 pour vous connecter. Tapez 2 pour créer un compte. Tapez 3 pour arrêter le programme : ")
     collection = session_manager.users_collection
 
     if selection == "1":
         username = input("Entrez votre identifiant : ")
-        password = input("Entrez votre mot de passe : ")
+        password = getpass.getpass("Entrez votre mot de passe : ")
         user_id = session_manager.login_user(username, password)
 
         if user_id:
@@ -42,6 +43,8 @@ def connexion():
         else:
             print("Cet identifiant existe déjà !")
             connexion()
+    elif selection == "3":
+        arret_programme_accueil()
 
 
 def menu(username, user_id):
@@ -186,6 +189,10 @@ def deconnexion(user_id, username):
     
 def arret_programme(user_id, username):
     deconnexion(user_id, username)
+    print("Arret du programme")
+    exit()
+    
+def arret_programme_accueil():
     print("Arret du programme")
     exit()
     
