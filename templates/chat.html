@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Messagerie</title>
+    <link rel="stylesheet" href="../static/style.css">
+
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+<body>
+    <div id="user-list">
+        <h3>Utilisateurs</h3>
+        {% for u in users %}
+            <div class="user" 
+                data-id="{{ u._id }}" 
+                data-name="{{ u.username }}"
+                onclick="selectUser('{{ u._id }}', '{{ u.username }}')">
+                
+                {{ u.username }}
+                <span class="notification-badge" id="notif-{{ u._id }}" style="display: none;">•</span>
+            </div>
+        {% endfor %}
+    </div>
+
+
+    <div id="chat-area">
+        <div id="top-bar">
+            <div>
+                Connecté en tant que <strong>{{ username }}</strong>
+                <span id="chat-with" style="margin-left: 20px;"></span>
+            </div>
+            <a href="{{ url_for('logout') }}">Déconnexion</a>
+        </div>
+
+        <div id="messages"></div>
+
+        <form id="message-form">
+            <input type="text" id="message-input" placeholder="Votre message" required>
+            <button type="submit">Envoyer</button>
+        </form>
+    </div>
+
+    <script>
+        const socket = io();
+        let selectedUserId = null;
+        let selectedUserName = '';
+        const currentUserId = "{{ session['user_id'] }}";
+
+        document.querySelectorAll('.user').forEach(el => {
+            el.addEventListener('click', () => {
+                // Retire l'état "actif" des autres utilisateurs
+                document.querySelectorAll('.user').forEach(u => u.classList.remove('active'));
+                el.classList.add('active');
+
+                // Met à jour l'utilisateur sélectionné
+                selectedUserId = el.dataset.id;
+                selectedUserName = el.dataset.name;
+                document.getElementById('chat-with').textContent = `En conversation avec ${selectedUserName}`;
+
+                // ➤ Supprimer le badge de notification si présent
+                const badge = el.querySelector('.notification-badge');
+                if (badge) {
+                    badge.style.display = 'none';
+                }
+
+                // Vide l’affichage actuel des messages
+                document.getElementById('messages').innerHTML = '';
+
+                // Demande les anciens messages côté serveur
+                socket.emit('load_messages', selectedUserId);
+            });
+        });
+
+
+        // Envoyer un message
+        document.getElementById('message-form').addEventListener('submit', e => {
+            e.preventDefault();
+            const message = document.getElementById('message-input').value.trim();
+            if (!selectedUserId || !message) return;
+
+            socket.emit('send_message', {
+                recipient_id: selectedUserId,
+                text: message
+            });
+
+            document.getElementById('message-input').value = '';
+        });
+
+        // Affichage des messages reçus
+        socket.on('new_message', msg => {
+            // Si le message est pour ou de la conversation sélectionnée, on l'affiche
+            if (msg.sender_id === selectedUserId || msg.recipient_id === selectedUserId) {
+                const msgBox = document.getElementById('messages');
+                const p = document.createElement('p');
+                p.textContent = `${msg.sender}: ${msg.text}`;
+                msgBox.appendChild(p);
+                msgBox.scrollTop = msgBox.scrollHeight;
+            } else {
+                // Sinon, on affiche une notification sur le contact correspondant
+                const otherUserId = msg.sender_id === currentUserId ? msg.recipient_id : msg.sender_id;
+                const badge = document.getElementById(`notif-${otherUserId}`);
+                if (badge) {
+                    badge.style.display = 'inline';
+                }
+            }
+        });
+
+
+        // (optionnel) chargement initial ou dynamique d'historique
+        socket.on('load_history', messages => {
+            const msgBox = document.getElementById('messages');
+            msgBox.innerHTML = '';
+            messages.forEach(msg => {
+                const p = document.createElement('p');
+                p.textContent = `${msg.sender_name}: ${msg.text}`;
+                msgBox.appendChild(p);
+            });
+            msgBox.scrollTop = msgBox.scrollHeight;
+        });
+
+        function selectUser(userId, username) {
+            selectedUserId = userId;
+
+            // Affiche le nom dans le panneau de droite
+            document.getElementById('conversation-header').textContent = username;
+
+            // Enlève la notification
+            const badge = document.getElementById('notif-' + userId);
+            if (badge) badge.style.display = 'none';
+
+            // Change le style des utilisateurs
+            document.querySelectorAll('.user').forEach(el => el.classList.remove('selected'));
+            document.querySelector(`.user[data-id="${userId}"]`).classList.add('selected');
+
+            // Vide la conversation et recharge les messages
+            document.getElementById('conversation').innerHTML = '';
+            loadConversationWith(userId);
+        }
+    </script>
+</body>
+</html>

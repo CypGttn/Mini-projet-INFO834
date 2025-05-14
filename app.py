@@ -1,5 +1,5 @@
 from bson import ObjectId
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session
 import datetime
 import logging
 
@@ -44,7 +44,7 @@ def login():
             session['user_id'] = str(user['_id'])
             session['username'] = user['username']
 
-            return redirect(url_for('menu'))
+            return redirect(url_for('chat'))
         else:
             return 'Nom d’utilisateur ou mot de passe incorrect', 401
 
@@ -74,57 +74,77 @@ def menu():
     print("rendering menu.html")
     return render_template('menu.html', username=username)
 
-@app.route('/messages', methods=['GET', 'POST'])
-def messages():
-    user_id = session.get('user_id')
-    username = session.get('username')
-
-    if not user_id:
+@app.route('/chat')
+def chat():
+    if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    if request.method == 'POST':
-        sender_id = user_id
-        recipient_username = request.form['recipient']
-        text = request.form['message']
+    user_id = ObjectId(session['user_id'])
+    username = session['username']
 
-        recipient = db.user.find_one({"username": recipient_username})
-        if not recipient:
-            return "Utilisateur destinataire introuvable", 400
+    users = list(db.user.find({'_id': {'$ne': user_id}}))  # tous les autres
+    return render_template('chat.html', users=users, user_id=str(user_id), username=username)
 
-        message = {
-            'sender': ObjectId(sender_id),
-            'recipient': recipient["_id"],
-            'text': text,
-            'timestamp': datetime.datetime.utcnow(),
-            'read': False
-        }
-        db.message.insert_one(message)
+@app.route('/messages_with/<user_id>')
+def messages_with(user_id):
+    if 'user_id' not in session:
+        return jsonify([])
 
-        # Emission du message en temps réel
-        sender = db.user.find_one({'_id': ObjectId(sender_id)})
-        print(f"[MESSAGE] Envoi de {sender['username']} à {recipient['username']} (room {recipient['_id']}) : {text}")
+    current_user = ObjectId(session['user_id'])
+    other_user = ObjectId(user_id)
 
-        socketio.emit('new_message', {
-            'sender': sender["username"],
-            'text': text,
-            'timestamp': message['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-        }, room=str(recipient["_id"]))
+    messages = list(db.message.find({
+        '$or': [
+            {'sender': current_user, 'recipient': other_user},
+            {'sender': other_user, 'recipient': current_user}
+        ]
+    }).sort('timestamp', 1))
 
-        return redirect(url_for('messages'))
-
-    received_messages = db.message.find({'recipient': ObjectId(user_id)})
-
-    # Optionnel : remplacer ObjectId émetteur par username pour l'affichage
-    messages = []
-    for m in received_messages:
+    result = []
+    for m in messages:
         sender_doc = db.user.find_one({'_id': m['sender']})
-        messages.append({
-            'sender': sender_doc['username'] if sender_doc else 'Inconnu',
+        result.append({
+            'sender': sender_doc['username'],
             'text': m['text'],
-            'timestamp': m['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
+            'timestamp': m['timestamp'].strftime("%Y-%m-%d %H:%M:%S"),
+            'sender_id': str(m['sender']),
+            'recipient_id': str(m['recipient'])
         })
 
-    return render_template("messages.html", messages=messages, user_id=str(user_id), username=username)
+    return jsonify(result)
+
+@app.route('/messages', methods=['GET'])
+def messages():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = ObjectId(session['user_id'])
+    username = session['username']
+
+    # On récupère tous les messages où l'utilisateur est soit l'expéditeur, soit le destinataire
+    all_messages = list(db.message.find({
+        '$or': [{'sender': user_id}, {'recipient': user_id}]
+    }))
+
+    # Regroupement par autre utilisateur
+    conversations = {}
+    for msg in all_messages:
+        other_user_id = (
+            msg['recipient'] if msg['sender'] == user_id else msg['sender']
+        )
+        other_user = db.user.find_one({'_id': other_user_id})
+        if not other_user:
+            continue
+        other_username = other_user['username']
+        if other_username not in conversations:
+            conversations[other_username] = []
+        conversations[other_username].append({
+            'text': msg['text'],
+            'timestamp': msg['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
+            'from_self': msg['sender'] == user_id
+        })
+
+    return render_template("messages.html", conversations=conversations, username=username, user_id=str(user_id))
 
 @app.route('/logout')
 def logout():
@@ -146,36 +166,64 @@ def handle_disconnect():
     if user_id:
         print(f"[SOCKET] Déconnexion de l'utilisateur : {user_id}")
 
+@socketio.on('load_messages')
+def load_messages(recipient_id):
+    sender_id = session.get('user_id')
+    if not sender_id:
+        return
+
+    # Récupère les messages entre les deux utilisateurs
+    messages = db.message.find({
+        '$or': [
+            {'sender': ObjectId(sender_id), 'recipient': ObjectId(recipient_id)},
+            {'sender': ObjectId(recipient_id), 'recipient': ObjectId(sender_id)}
+        ]
+    }).sort('timestamp', 1)
+
+    formatted_messages = []
+    for msg in messages:
+        sender_doc = db.user.find_one({'_id': msg['sender']})
+        formatted_messages.append({
+            'sender_name': sender_doc['username'],
+            'text': msg['text'],
+            'timestamp': msg['timestamp'].strftime('%H:%M %d/%m')
+        })
+
+    emit('load_history', formatted_messages)
+
 @socketio.on('send_message')
 def handle_send_message(data):
-    sender_id = ObjectId(data['sender_id'])
-    recipient_username = data['recipient']
-    recipient_doc = db.user.find_one({'username': recipient_username})
+    sender_id = ObjectId(session['user_id'])
+    recipient_id = ObjectId(data['recipient_id'])
+    text = data['text']
 
-    if not recipient_doc:
+    if not sender_id or not recipient_id or not text:
         return
+    
+    sender_doc = db.user.find_one({'_id': sender_id})
+    timestamp = datetime.datetime.utcnow()
 
     message = {
         'sender': sender_id,
-        'recipient': recipient_doc['_id'],
-        'text': data['text'],
-        'timestamp': datetime.datetime.utcnow(),
+        'recipient': recipient_id,
+        'text': text,
+        'timestamp': timestamp,
         'read': False
     }
     db.message.insert_one(message)
 
+
     msg_data = {
-        'sender': data['sender'],
+        'sender': sender_doc['username'],
         'text': data['text'],
-        'timestamp': datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        'timestamp': datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        'sender_id': str(sender_id),
+        'recipient_id': str(recipient_id)
     }
 
-    # Envoyer au destinataire
-    room_id = str(recipient_doc['_id'])
-    emit('new_message', msg_data, room=room_id)
-
-    # Envoyer aussi à l'expéditeur
-    emit('new_message', msg_data, room=data['sender_id'])
+    # Envoyer à la room du destinataire et de l'expéditeur
+    emit('new_message', msg_data, room=str(recipient_id))
+    emit('new_message', msg_data, room=str(sender_id))
 
 
 @socketio.on('message')

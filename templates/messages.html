@@ -2,6 +2,11 @@
 <html>
 <head>
     <title>Messages en temps réel</title>
+    <style>
+        .from-self { text-align: right; color: green; }
+        .from-other { text-align: left; color: blue; }
+        .conversation { border: 1px solid #ccc; margin-bottom: 10px; padding: 5px; border-radius: 8px; }
+    </style>
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -38,12 +43,18 @@
     </script>
 </head>
 <body>
-    <h2>Messages reçus</h2>
-    <div id="messages">
-        {% for message in messages %}
-            <p>{{ message.sender }}: {{ message.text }} - {{ message.timestamp }}</p>
-        {% endfor %}
-    </div>
+    <h2>Conversations de {{ username }}</h2>
+
+    {% for contact, messages in conversations.items() %}
+        <div class="conversation">
+            <h3>Conversation avec {{ contact }}</h3>
+            {% for msg in messages %}
+                <p class="{{ 'from-self' if msg.from_self else 'from-other' }}">
+                    {{ msg.text }}<br><small>{{ msg.timestamp }}</small>
+                </p>
+            {% endfor %}
+        </div>
+    {% endfor %}
 
     <h3>Envoyer un message</h3>
     <form id="message-form">
