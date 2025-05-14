@@ -6,22 +6,36 @@ class Connexion:
     def __init__(self, username, password, liste_user):
         self.connecte = False
 
-        if re.match(r'^[^\d]+$', username) and re.match(r'^[^\d]+$', password):
+        # Vérifie que username et password sont bien des chaînes (ou bytes pour password)
+        if isinstance(username, str) and isinstance(password, (str, bytes)) and \
+           re.match(r'^[^\d]+$', username):
+
+            print(f"Tentative de connexion pour : username='{username}'")
+
             user = liste_user.find_one({"username": username})
             if user:
+                print("Utilisateur trouvé.")
                 hash_mdp = user['password']
-                
-                # Si le hash est stocké comme Binary, le convertir en bytes
+
+                # Convertir Binary BSON en bytes si nécessaire
                 if isinstance(hash_mdp, Binary):
                     hash_mdp = bytes(hash_mdp)
 
-                # Vérification du mot de passe
-                if bcrypt.checkpw(password.encode('utf-8'), hash_mdp):
-                    print("Connexion réussie !")
-                    print(f"Bienvenue {username} !")
-                    self.connecte = True
-                    return
+                try:
+                    # Encoder le mot de passe s'il est encore en string
+                    password_bytes = password.encode('utf-8') if isinstance(password, str) else password
 
-            print("Identifiant ou mot de passe incorrect.")
+                    # Comparaison sécurisée
+                    if bcrypt.checkpw(password_bytes, hash_mdp):
+                        print("Connexion réussie !")
+                        print(f"Bienvenue {username} !")
+                        self.connecte = True
+                        return
+                    else:
+                        print("Identifiant ou mot de passe incorrect.")
+                except Exception as e:
+                    print(f"Erreur lors de la vérification du mot de passe : {e}")
+            else:
+                print("Identifiant ou mot de passe incorrect.")
         else:
-            print("Veuillez saisir deux chaînes de caractères.")
+            print("Veuillez saisir un identifiant et un mot de passe valides (lettres uniquement, sans chiffres).")
