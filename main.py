@@ -6,6 +6,7 @@ from modules.connexion import Connexion
 from modules.inscription import Inscription
 from modules.messages import Messages
 from modules.user_session_manager import UserSessionManager
+from requetes import Requetes
 
 # Initialisation du gestionnaire de sessions
 session_manager = UserSessionManager()
@@ -179,7 +180,7 @@ def afficher_requetes(user_id, username):
 
     user = session_manager.users_collection.find_one({"username": username})
     user_id = str(user["_id"])
-    menu(username, user_id)    
+    menu(username, user_id) 
     
 
 def deconnexion(user_id, username):
