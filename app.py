@@ -36,7 +36,7 @@ def login():
         password = request.form['password']
 
         session_manager.login_user(username, password)
-        
+
         # Recherche de l'utilisateur dans la base
         user = db.user.find_one({'username': username})
         if user:
@@ -67,15 +67,6 @@ def register():
             return "L'identifiant existe déjà", 400
 
     return render_template('register.html')
-
-@app.route('/menu')
-def menu():
-    if 'user_id' not in session:
-        print("user_id not in session")
-        return redirect(url_for('login'))
-    username = session['username']
-    print("rendering menu.html")
-    return render_template('menu.html', username=username)
 
 @app.route('/chat')
 def chat():
@@ -116,38 +107,6 @@ def messages_with(user_id):
 
     return jsonify(result)
 
-@app.route('/messages', methods=['GET'])
-def messages():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    user_id = ObjectId(session['user_id'])
-    username = session['username']
-
-    # On récupère tous les messages où l'utilisateur est soit l'expéditeur, soit le destinataire
-    all_messages = list(db.message.find({
-        '$or': [{'sender': user_id}, {'recipient': user_id}]
-    }))
-
-    # Regroupement par autre utilisateur
-    conversations = {}
-    for msg in all_messages:
-        other_user_id = (
-            msg['recipient'] if msg['sender'] == user_id else msg['sender']
-        )
-        other_user = db.user.find_one({'_id': other_user_id})
-        if not other_user:
-            continue
-        other_username = other_user['username']
-        if other_username not in conversations:
-            conversations[other_username] = []
-        conversations[other_username].append({
-            'text': msg['text'],
-            'timestamp': msg['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
-            'from_self': msg['sender'] == user_id
-        })
-
-    return render_template("messages.html", conversations=conversations, username=username, user_id=str(user_id))
 
 @app.route('/stats')
 def stats():
