@@ -1,9 +1,9 @@
 // init.js
 use lesBellesMiches;
 
-// Supprime les collections si elles existent déjà
-db.user.drop();
-db.message.drop();
+// Création des bases seulement si elles n'existent pas
+if (!db.getCollectionNames().includes("user") && !db.getCollectionNames().includes("message")) {
+    db.createCollection("user");
+    db.createCollection("message");
+}
 
-db.createCollection("user");
-db.createCollection("message");
