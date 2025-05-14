@@ -5,7 +5,12 @@ from bson import ObjectId
 import bcrypt
 
 class UserSessionManager:
-    def __init__(self, mongo_uri='mongodb://localhost:27017/', redis_host='localhost', redis_port=6379):
+    def __init__(
+        self,
+        mongo_uri='mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0',
+        redis_host='localhost',
+        redis_port=6379
+    ):        
         # Initialisation de Redis
         self.redis_client = redis.StrictRedis(host=redis_host, port=redis_port, db=0, decode_responses=True)
         
