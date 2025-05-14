@@ -368,20 +368,6 @@ def afficher_utilisateurs_connectés(username):
     user_id = str(user["_id"])
     menu(username, user_id)
 
-def afficher_requetes(user_id, username):
-    print("Voici quelques statistiques sur les dernières utilisations de l'application :")
-    req = Requetes(session_manager.mongo_client, session_manager.redis_client)
-    print(f"Nombre total d'utilisateurs : {str(req.total_users())}")
-    user, val_conn = req.most_active_user()
-    print(f"Utilisateur qui se connecte le plus est {user} avec {val_conn} connexions.")
-    user, val_mess = req.most_messages_send()
-    print(f"L'utilisateur qui envoie le plus de message est {user} avec {val_mess} messages envoyés.")
-    user, val_mess = req.most_messages_receive()
-    print(f"L'utilisateur qui reçoit le plus de message est {user} avec {val_mess} messages reçus.")
-
-    user = session_manager.users_collection.find_one({"username": username})
-    user_id = str(user["_id"])
-    menu(username, user_id) 
     
 
 def deconnexion(user_id, username):
