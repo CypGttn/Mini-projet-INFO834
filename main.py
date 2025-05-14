@@ -1,4 +1,5 @@
 import datetime
+import getpass
 from bson import ObjectId
 from bson.errors import InvalidId
 from modules.connexion import Connexion
@@ -12,12 +13,12 @@ session_manager = UserSessionManager()
 
 def connexion():
     print("Bienvenue dans Les Belles Miches ! Le chat qui fait gonfler ton temps d'écran.")
-    selection = input("Tapez 1 pour vous connecter. Tapez 2 pour créer un compte : ")
+    selection = input("Tapez 1 pour vous connecter. Tapez 2 pour créer un compte. Tapez 3 pour arrêter le programme : ")
     collection = session_manager.users_collection
 
     if selection == "1":
         username = input("Entrez votre identifiant : ")
-        password = input("Entrez votre mot de passe : ")
+        password = getpass.getpass("Entrez votre mot de passe : ")
         user_id = session_manager.login_user(username, password)
 
         if user_id:
@@ -41,6 +42,8 @@ def connexion():
         else:
             print("Cet identifiant existe déjà !")
             connexion()
+    elif selection == "3":
+        arret_programme_accueil()
 
 
 def menu(username, user_id):
@@ -51,8 +54,9 @@ def menu(username, user_id):
     print("4. Voir les connexions globales")
     print("5. Voir mes logs")
     print("6. Voir les utilisateurs connectés")
-    print("7. Se déconnecter")
-    print("8. Arrêter le programme")
+    print("7. Accéder aux requêtes avancées")
+    print("8. Se déconnecter")
+    print("9. Arrêter le programme")
 
     selected = input("Votre choix : ")
     messages = Messages(session_manager.db, username)
@@ -76,9 +80,11 @@ def menu(username, user_id):
     elif selected == "6":
         afficher_utilisateurs_connectés(username)
     elif selected == "7":
+        afficher_requetes(user_id, username)
+    elif selected == "8":
         deconnexion(user_id, username)
         connexion()
-    elif selected == "8":
+    elif selected == "9":
         arret_programme(user_id, username)
     else:
         print("Option invalide.")
@@ -153,6 +159,24 @@ def afficher_utilisateurs_connectés(username):
                     print(f"- {user['username']} (ID: {user_id})")
         except (InvalidId, IndexError):
             continue
+
+    
+        
+    user = users_collection.find_one({"username": username})
+    user_id = str(user["_id"])
+    menu(username, user_id)
+
+def afficher_requetes(user_id, username):
+    print("Voici quelques statistiques sur les dernières utilisations de l'application :")
+    req = Requetes(session_manager.mongo_client, session_manager.redis_client)
+    print(f"Nombre total d'utilisateurs : {str(req.total_users())}")
+    user, val_conn = req.most_active_user()
+    print(f"Utilisateur qui se connecte le plus est {user} avec {val_conn} connexions.")
+    user, val_mess = req.most_messages_send()
+    print(f"L'utilisateur qui envoie le plus de message est {user} avec {val_mess} messages envoyés.")
+    user, val_mess = req.most_messages_receive()
+    print(f"L'utilisateur qui reçoit le plus de message est {user} avec {val_mess} messages reçus.")
+
     user = session_manager.users_collection.find_one({"username": username})
     user_id = str(user["_id"])
     menu(username, user_id)    
@@ -164,6 +188,10 @@ def deconnexion(user_id, username):
     
 def arret_programme(user_id, username):
     deconnexion(user_id, username)
+    print("Arret du programme")
+    exit()
+    
+def arret_programme_accueil():
     print("Arret du programme")
     exit()
     

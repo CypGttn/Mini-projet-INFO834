@@ -5,8 +5,14 @@ db.createCollection("user");
 db.createCollection("message");
 
 db.user.insertMany([
-    { username: "alice", password: "alice" },
-    { username: "bob", password: "bob" }
+    {
+        username: "alice",
+        password: "alice"
+    },
+    {
+        username: "bob",
+        password: "bob"
+    }
 ]);
 /*
 db.message.insertOne({

@@ -2,6 +2,7 @@ import redis
 import datetime
 from pymongo import MongoClient
 from bson import ObjectId
+import bcrypt
 
 class UserSessionManager:
     def __init__(self, mongo_uri='mongodb://localhost:27017/', redis_host='localhost', redis_port=6379):
@@ -38,16 +39,22 @@ class UserSessionManager:
         user = self.users_collection.find_one({"username": username})
         if user:
             print("Utilisateur trouvé.")
-            if user.get("password") == password:
-                user_id = str(user["_id"])
-                self.log_event(user_id, "login")
-                return user_id
-            else:
-                print("Mot de passe incorrect.")
+            stored_hash = user.get("password")
+
+            try:
+                if stored_hash and bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
+                    user_id = str(user["_id"])
+                    self.log_event(user_id, "login")
+                    return user_id
+                else:
+                    print("Mot de passe incorrect.")
+            except Exception as e:
+                print(f"Erreur lors de la vérification du mot de passe : {e}")
         else:
             print("Utilisateur non trouvé.")
 
         return None
+
 
     def logout_user(self, user_id):
         self.log_event(user_id, "logout")
