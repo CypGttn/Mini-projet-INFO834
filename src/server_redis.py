@@ -6,15 +6,6 @@ import datetime
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-# ───── Connexion à MongoDB ───── #
-try:
-    mongo_client = MongoClient("mongodb://localhost:27017/")  # Modifie selon ton setup
-    db = mongo_client["lesBellesMiches"]  # Nom de la base
-    collection = db["user"]  # Nom de la collection
-except Exception as e:
-    print(f"Erreur de connexion à MongoDB : {e}")
-    sys.exit(1)
-
 # ───── Récupération du mot de passe Redis ───── #
 redis_user = collection.find_one({"username": "cyp"})
 
