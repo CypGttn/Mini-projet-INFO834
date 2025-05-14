@@ -10,6 +10,7 @@ from modules.connexion import Connexion
 from modules.inscription import Inscription
 from modules.user_session_manager import UserSessionManager
 from modules.messages import Messages
+from modules.requetes import Requetes
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Remplace avec une clé secrète aléatoire pour ta session
@@ -145,6 +146,27 @@ def messages():
         })
 
     return render_template("messages.html", conversations=conversations, username=username, user_id=str(user_id))
+
+@app.route('/stats')
+def stats():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    req = Requetes(mongo_client, redis_client)
+    total_users = req.total_users()
+    most_active_user, active_count = req.most_active_user()
+    top_sender, sent_count = req.most_messages_send()
+    top_receiver, recv_count = req.most_messages_receive()
+
+    return render_template('stats.html', 
+                           username=session['username'],
+                           total_users=total_users,
+                           most_active_user=most_active_user,
+                           active_count=active_count,
+                           top_sender=top_sender,
+                           sent_count=sent_count,
+                           top_receiver=top_receiver,
+                           recv_count=recv_count)
 
 @app.route('/logout')
 def logout():

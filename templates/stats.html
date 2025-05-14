@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Statistiques</title>
+</head>
+<body>
+    <h2>Statistiques de l'application</h2>
+
+    <p>Connecté en tant que : {{ username }}</p>
+
+    <ul>
+        <li><strong>Nombre total d'utilisateurs connectés :</strong> {{ total_users }}</li>
+        <li><strong>Utilisateur le plus actif :</strong> {{ most_active_user }} ({{ active_count }} connexions)</li>
+        <li><strong>Utilisateur qui envoie le plus de messages :</strong> {{ top_sender }} ({{ sent_count }} messages)</li>
+        <li><strong>Utilisateur qui reçoit le plus de messages :</strong> {{ top_receiver }} ({{ recv_count }} messages)</li>
+    </ul>
+
+    <a href="{{ url_for('chat') }}">⬅ Retour au chat</a>
+</body>
+</html>
