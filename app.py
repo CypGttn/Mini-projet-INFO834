@@ -17,7 +17,7 @@ app.secret_key = 'your_secret_key'  # Remplace avec une clé secrète aléatoire
 socketio = SocketIO(app)
 
 # Connexion à MongoDB et Redis
-mongo_client = MongoClient("mongodb://localhost:27017/")
+mongo_client = MongoClient()
 db = mongo_client["lesBellesMiches"]
 users_collection = db["user"]
 
@@ -113,7 +113,7 @@ def stats():
     if 'username' not in session:
         return redirect(url_for('login'))
 
-    req = Requetes(mongo_client, redis_client)
+    req = Requetes(session_manager.mongo_client, session_manager.redis_client)
     total_users = req.total_users()
     most_active_user, active_count = req.most_active_user()
     top_sender, sent_count = req.most_messages_send()
