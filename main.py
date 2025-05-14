@@ -6,6 +6,7 @@ from modules.connexion import Connexion
 from modules.inscription import Inscription
 from modules.messages import Messages
 from modules.user_session_manager import UserSessionManager
+from src.requetes import Requetes
 
 # Initialisation du gestionnaire de sessions
 session_manager = UserSessionManager()
