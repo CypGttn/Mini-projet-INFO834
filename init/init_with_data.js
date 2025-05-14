@@ -14,8 +14,7 @@ db.user.insertMany([
         password: "bob"
     }
 ]);
-
-
+/*
 db.message.insertOne({
     sender: "alice",
     recipient: "bob",
@@ -23,3 +22,4 @@ db.message.insertOne({
     timestamp: new Date(),
     read: false
 });
+*/

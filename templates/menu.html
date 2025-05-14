@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Menu</title>
+</head>
+<body>
+    <h2>Bienvenue, {{ username }}</h2>
+    <ul>
+        <li><a href="{{ url_for('messages') }}">Messagerie</a></li>
+        <li><a href="{{ url_for('logout') }}">Se déconnecter</a></li>
+    </ul>
+</body>
+</html>
